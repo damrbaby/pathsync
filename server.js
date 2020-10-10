@@ -15,39 +15,30 @@ export default class PathSync {
   }
 
   install(app: any) {
-    app.get('/item/*', (req, res) => {
-      let sync = new Item(req.path.replace('/item', ''), this.client, this.redis)
-      sync.get().then((item) => {
-        res.json(item)
-      }, () => {
-        res.status(500).send()
-      })
+    app.get('/item/:path*', async ctx => {
+      let sync = new Item('/' + ctx.params.path, this.client, this.redis)
+      const item = await sync.get()
+      ctx.body = item
     })
 
-    app.get('/list/*', (req, res) => {
-      let sync = new List(req.path.replace('/list', ''), this.client, this.redis)
-      sync.getAll().then((items) => {
-        res.json(items.map(item => item.props))
-      }, () => {
-        res.status(500).send()
-      })
+    app.get('/list/:path*', async ctx => {
+      let sync = new List('/' + ctx.params.path, this.client, this.redis)
+      const items = await sync.getAll()
+      ctx.body = items.map(item => item.props)
     })
 
-    app.get('/collection/*', (req, res) => {
-      let sync = new Collection(req.path.replace('/collection', ''), this.client, this.redis)
-      sync.getAll().then((items) => {
-        let data = []
-        for (let item of items) {
-          data.push({
-            key: item.key,
-            path: item.path,
-            props: item.props
-          })
-        }
-        res.json(data)
-      }, () => {
-        res.status(500).send()
-      })
+    app.get('/collection/:path*', async ctx => {
+      let sync = new Collection('/' + ctx.params.path, this.client, this.redis)
+      const items = await sync.getAll()
+      let data = []
+      for (let item of items) {
+        data.push({
+          key: item.key,
+          path: item.path,
+          props: item.props
+        })
+      }
+      ctx.body = data
     })
   }
 

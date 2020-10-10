@@ -100,4 +100,3 @@ export default class Collection<Props> extends Path {
   }
 
 }
-
