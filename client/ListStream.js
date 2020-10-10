@@ -1,5 +1,5 @@
 // @flow
-import Rx from 'rx'
+import { ReplaySubject } from 'rxjs'
 import _ from 'lodash'
 
 type Events = 'value' | 'added' | 'removed'
@@ -17,7 +17,7 @@ export default class ListStream {
     this.host = host
     this.client = client
     this.path = path
-    this.stream = new Rx.ReplaySubject(1)
+    this.stream = new ReplaySubject(1)
     this.items = []
   }
 
@@ -33,22 +33,22 @@ export default class ListStream {
         if (data.action === 'added' && index < 0) {
           this.items.push(data.item)
           if (updateStream) {
-            this.stream.onNext({ added: data.item })
+            this.stream.next({ added: data.item })
           }
         } else if (data.action === 'removed' && index >=0) {
           this.items.splice(index, 1)
           if (updateStream) {
-            this.stream.onNext({ removed: data.item })
+            this.stream.next({ removed: data.item })
           }
         } else if (data.action === 'changed' && index >= 0) {
           this.items.splice(index, 1, data.newItem)
           if (updateStream) {
-            this.stream.onNext({ removed: data.item })
-            this.stream.onNext({ added: data.newItem })
+            this.stream.next({ removed: data.item })
+            this.stream.next({ added: data.newItem })
           }
         }
         if (updateStream) {
-          this.stream.onNext({ value: this.items.slice() })
+          this.stream.next({ value: this.items.slice() })
         }
       }
 
@@ -72,9 +72,9 @@ export default class ListStream {
     }
 
     for (let item of this.items) {
-      this.stream.onNext({ added: item })
+      this.stream.next({ added: item })
     }
-    this.stream.onNext({ value: this.items })
+    this.stream.next({ value: this.items })
 
     loaded = true
   }

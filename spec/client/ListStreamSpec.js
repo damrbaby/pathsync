@@ -92,7 +92,7 @@ describe('ListStream', () => {
     )
 
     for (let sub of subs) {
-      sub.dispose()
+      sub.unsubscribe()
     }
   })
 
@@ -172,9 +172,8 @@ describe('ListStream', () => {
     ])
 
     for (let sub of subs) {
-      sub.dispose()
+      sub.unsubscribe()
     }
   })
 
 })
-

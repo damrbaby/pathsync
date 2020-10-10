@@ -24,7 +24,7 @@ describe('ItemStream', () => {
       [{}],
       [{ foo: 'bar' }]
     ])
-    sub.dispose()
+    sub.unsubscribe()
   })
 
   it('should pull from server then push update', async function() {
@@ -40,7 +40,7 @@ describe('ItemStream', () => {
     await sleep(10)
     expect(handler.calls.count()).toEqual(1)
     expect(handler).toHaveBeenCalledWith({ hello: 'world' })
-    sub.dispose()
+    sub.unsubscribe()
   })
 
   it('should use newer item over server response', async function() {
@@ -60,8 +60,7 @@ describe('ItemStream', () => {
       [{ hello: 'world' }],
       [{ latest: 'update' }]
     ])
-    sub.dispose()
+    sub.unsubscribe()
   })
 
 })
-

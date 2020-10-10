@@ -1,5 +1,5 @@
 // @flow
-import Rx from 'rx'
+import { ReplaySubject } from 'rxjs'
 
 export default class Item {
 
@@ -14,7 +14,7 @@ export default class Item {
     this.host = host
     this.client = client
     this.path = path
-    this.stream = new Rx.ReplaySubject(1)
+    this.stream = new ReplaySubject(1)
     this.item = null
     this.subscription = null
   }
@@ -46,7 +46,7 @@ export default class Item {
 
   setItem(item: Object) {
     this.item = item
-    this.stream.onNext(item)
+    this.stream.next(item)
   }
 
   destroy() {

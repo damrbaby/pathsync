@@ -80,7 +80,7 @@ describe('CollectionStream', () => {
       }
     }])
 
-    sub.dispose()
+    sub.unsubscribe()
   })
 
   it('should queue items to add and remove', async function() {
@@ -156,6 +156,6 @@ describe('CollectionStream', () => {
       }
     }])
 
-    sub.dispose()
+    sub.unsubscribe()
   })
 })

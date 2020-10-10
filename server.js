@@ -1,7 +1,4 @@
 // @flow
-import faye from 'faye'
-import express from 'express'
-
 import Path from './server/Path'
 import Item from './server/Item'
 import List from './server/List'

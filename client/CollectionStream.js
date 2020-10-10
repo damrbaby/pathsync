@@ -1,5 +1,5 @@
 // @flow
-import Rx from 'rx'
+import { ReplaySubject } from 'rxjs'
 
 export default class CollectionStream {
 
@@ -14,7 +14,7 @@ export default class CollectionStream {
     this.host = host
     this.client = client
     this.path = path
-    this.stream = new Rx.ReplaySubject(1)
+    this.stream = new ReplaySubject(1)
     this.items = new Map()
     this.subscription = null
   }
@@ -36,7 +36,7 @@ export default class CollectionStream {
         if (operation) {
           operation()
         }
-        this.stream.onNext(this.items)
+        this.stream.next(this.items)
       } else {
         queue.push(operation)
       }
@@ -56,7 +56,7 @@ export default class CollectionStream {
       }
     }
 
-    this.stream.onNext(this.items)
+    this.stream.next(this.items)
 
     loaded = true
   }
@@ -74,4 +74,3 @@ export default class CollectionStream {
   }
 
 }
-
