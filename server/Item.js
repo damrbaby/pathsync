@@ -16,7 +16,7 @@ export default class Item<Props> extends Path {
     ])
   }
 
-  async update(props: Object): Promise<Props> {
+  async update(props: $Shape<Props>): Promise<Props> {
     let currentProps = await this.get()
     let newProps = Object.assign(currentProps, props)
     await this.set(newProps)

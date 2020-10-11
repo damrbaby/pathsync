@@ -50,7 +50,7 @@ export default class Item {
   }
 
   destroy() {
-    delete this.stream
+    this.stream.unsubscribe()
     if (this.subscription) {
       this.subscription.cancel()
     }

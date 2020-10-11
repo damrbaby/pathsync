@@ -62,8 +62,14 @@ export default class List<Props> extends Path {
     })
   }
 
-  get(item: Props): ListItem<Props> {
-    return new ListItem(this, item)
+  async get(props: Props): ListItem<Props> {
+    let items = await this.getAll()
+    for (let item of items) {
+      if (stringify(item.props) === stringify(props)) {
+        return item
+      }
+    }
+    throw new Error('item not found')
   }
 
   async set(items: Array<Props>): Promise<void> {
@@ -87,4 +93,3 @@ export default class List<Props> extends Path {
   }
 
 }
-

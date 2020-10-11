@@ -99,4 +99,8 @@ export default class Collection<Props> extends Path {
     return Promise.all(keys.map(key => this.get(key)))
   }
 
+  getCount() {
+    return this.redis.llen(this.keyPath)
+  }
+
 }

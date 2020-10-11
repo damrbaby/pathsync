@@ -62,6 +62,18 @@ describe('List', function() {
     sub.cancel()
   })
 
+  it('should get item', async function() {
+    await this.sync.add({ foo: 'bar' })
+
+    await this.sync.get({ foo: 'bar' }).then((item) => {
+      expect(item.props).toEqual({ foo: 'bar' })
+    })
+
+    await this.sync.get({ not: 'found' }).catch((error) => {
+      expect(error).toEqual(new Error('item not found'))
+    })
+  })
+
   it('should get last item', async function() {
     await this.sync.getLast().then((item) => {
       expect(item).toEqual(null)
