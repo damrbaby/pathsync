@@ -45,15 +45,15 @@ export default class PathSync {
     return new Path(path, this.client, this.redis)
   }
 
-  item(path: string) {
+  item(path: string): Item<any> {
     return new Item(path, this.client, this.redis)
   }
 
-  list(path: string) {
+  list(path: string): List<any> {
     return new List(path, this.client, this.redis)
   }
 
-  collection(path: string) {
+  collection(path: string): Collection<any> {
     return new Collection(path, this.client, this.redis)
   }
 
