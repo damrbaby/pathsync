@@ -1,4 +1,3 @@
-// @flow
 import stringify from 'json-stable-stringify'
 import Path from './Path'
 
@@ -62,7 +61,7 @@ export default class List<Props> extends Path {
     })
   }
 
-  async get(props: Props): ListItem<Props> {
+  async get(props: Props): Promise<ListItem<Props>> {
     let items = await this.getAll()
     for (let item of items) {
       if (stringify(item.props) === stringify(props)) {
@@ -76,10 +75,9 @@ export default class List<Props> extends Path {
     await this.redis.rpush(this.path, items.map(item => stringify(item)))
   }
 
-  getAll(): Promise<Array<ListItem<Props>>> {
-    return this.redis.lrange(this.path, 0, -1).then((data) => {
-      return data.map(d => new ListItem(this, JSON.parse(d)))
-    })
+  async getAll(): Promise<Array<ListItem<Props>>> {
+    const data:Array<string> = await this.redis.lrange(this.path, 0, -1)
+    return data.map(d => new ListItem(this, JSON.parse(d)))
   }
 
   getCount(): Promise<number> {

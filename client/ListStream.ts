@@ -1,8 +1,13 @@
-// @flow
 import { ReplaySubject } from 'rxjs'
-import _ from 'lodash'
+import { findLastIndex } from 'lodash'
 
 type Events = 'value' | 'added' | 'removed'
+
+type Payload = {
+  action: 'added' | 'changed' | 'removed'
+  item: Object
+  newItem: Object
+}
 
 export default class ListStream {
 
@@ -11,7 +16,7 @@ export default class ListStream {
   path: string
   stream: any
   items: Array<Object>
-  subscription: ?Object
+  subscription: any
 
   constructor(host: string, client: any, path: string) {
     this.host = host
@@ -25,11 +30,11 @@ export default class ListStream {
     if (this.subscription) return
 
     let loaded = false
-    let operations = []
+    let operations:Array<Function> = []
 
-    this.subscription = this.client.subscribe(this.path, (data) => {
-      let operation = (updateStream) => {
-        let index = _.findLastIndex(this.items, data.item)
+    this.subscription = this.client.subscribe(this.path, (data: Payload) => {
+      let operation = (updateStream: boolean) => {
+        let index = findLastIndex(this.items, data.item)
         if (data.action === 'added' && index < 0) {
           this.items.push(data.item)
           if (updateStream) {
@@ -61,7 +66,7 @@ export default class ListStream {
 
     await this.subscription
 
-    let data = await fetch(this.host + '/list' + this.path).then(res => res.json())
+    let data = await fetch(this.host + '/list' + this.path).then((res:any) => res.json())
 
     for (let item of data) {
       this.items.push(item)
@@ -81,7 +86,7 @@ export default class ListStream {
 
   subscribe(event: Events, handler: Function) {
     this.initSubscription()
-    return this.stream.subscribe(data => {
+    return this.stream.subscribe((data: { added: Object, removed: Object, value: Object }) => {
       if (data[event]) {
         handler(data[event])
       }

@@ -1,4 +1,3 @@
-// @flow
 import Path from './server/Path'
 import Item from './server/Item'
 import List from './server/List'
@@ -15,19 +14,19 @@ export default class PathSync {
   }
 
   install(app: any) {
-    app.get('/item/:path*', async ctx => {
+    app.get('/item/:path*', async (ctx:any) => {
       let sync = new Item('/' + ctx.params.path, this.client, this.redis)
       const item = await sync.get()
       ctx.body = item
     })
 
-    app.get('/list/:path*', async ctx => {
+    app.get('/list/:path*', async (ctx: any) => {
       let sync = new List('/' + ctx.params.path, this.client, this.redis)
       const items = await sync.getAll()
       ctx.body = items.map(item => item.props)
     })
 
-    app.get('/collection/:path*', async ctx => {
+    app.get('/collection/:path*', async (ctx: any) => {
       let sync = new Collection('/' + ctx.params.path, this.client, this.redis)
       const items = await sync.getAll()
       let data = []
@@ -43,7 +42,7 @@ export default class PathSync {
   }
 
   path(path: string) {
-    return new Path(path, this.client)
+    return new Path(path, this.client, this.redis)
   }
 
   item(path: string) {

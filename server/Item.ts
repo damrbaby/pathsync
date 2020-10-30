@@ -1,12 +1,10 @@
-// @flow
 import Path from './Path'
 
 export default class Item<Props> extends Path {
 
-  get(): Promise<Props> {
-    return this.redis.get(this.path).then((data) => {
-      return JSON.parse(data) || {}
-    })
+  async get(): Promise<Props> {
+    const data = await this.redis.get(this.path)
+    return JSON.parse(data) || {}
   }
 
   set(props: Props) {
@@ -16,7 +14,7 @@ export default class Item<Props> extends Path {
     ])
   }
 
-  async update(props: $Shape<Props>): Promise<Props> {
+  async update(props: Partial<Props>): Promise<Props> {
     let currentProps = await this.get()
     let newProps = Object.assign(currentProps, props)
     await this.set(newProps)

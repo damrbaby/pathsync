@@ -1,4 +1,3 @@
-// @flow
 import ItemStream from './client/ItemStream'
 import ListStream from './client/ListStream'
 import CollectionStream from './client/CollectionStream'

@@ -5,12 +5,12 @@ import { pathSync, server } from '../helpers/helper'
 describe('Collection', function() {
 
   beforeEach(function() {
-    Collection.__Rewire__('pushid', () => 'x123')
+    Collection.__Rewire__('nanoid', () => 'x123')
     this.sync = pathSync.collection('/my/stuff')
   })
 
   afterEach(function() {
-    Collection.__ResetDependency__('pushid')
+    Collection.__ResetDependency__('nanoid')
   })
 
   it('should add item', async function() {
@@ -38,7 +38,7 @@ describe('Collection', function() {
       }
     })
     sub.cancel()
-    Collection.__Rewire__('pushid', () => 'z987')
+    Collection.__Rewire__('nanoid', () => 'z987')
     await this.sync.add({ bing: 'bong' })
     await this.sync.getAll().then((items) => {
       expect(items.map(item => item.props)).toEqual([{
@@ -120,7 +120,7 @@ describe('Collection', function() {
 
   it('should GET items sorted by key', async function() {
     await this.sync.add({ foo: 'bar' })
-    Collection.__Rewire__('pushid', () => 'y987')
+    Collection.__Rewire__('nanoid', () => 'y987')
     await this.sync.add({ hello: 'world' })
     let json = await fetch(`http://localhost:${server.address().port}/collection/my/stuff`).then(res => res.json())
     expect(json).toEqual([

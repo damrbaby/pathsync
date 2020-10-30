@@ -1,5 +1,4 @@
-// @flow
-import pushid from 'pushid'
+import { nanoid } from 'nanoid'
 import Item from './Item'
 import Path from './Path'
 
@@ -25,12 +24,12 @@ export class CollectionItem<Props> {
     return this.sync.remove(this.key)
   }
 
-  update(props: Object) {
+  update(props: Partial<Props>) {
     return this.sync.update(this.key, props)
   }
 
   subscribe(handler: Function) {
-    return this.sync.subscribe((data) => {
+    return this.sync.subscribe((data: { item: { key: string, props: Props }}) => {
       if (data.item.key === this.key) {
         handler(data.item.props)
       }
@@ -41,14 +40,14 @@ export class CollectionItem<Props> {
 
 export default class Collection<Props> extends Path {
 
-  keyPath: string
+  keyPath: string = ''
 
   newItem(key: string): Item<Props> {
     return new Item(this.path + '/' + key, this.client, this.redis)
   }
 
   add(props: Props): Promise<CollectionItem<Props>> {
-    return this.set(pushid(), props)
+    return this.set(nanoid(), props)
   }
 
   async set(key: string, props: Props): Promise<CollectionItem<Props>> {
@@ -75,9 +74,9 @@ export default class Collection<Props> extends Path {
     })
   }
 
-  async update(key: string, props: Object): Promise<CollectionItem<Props>> {
-    props = await this.newItem(key).update(props)
-    let item = new CollectionItem(this, props, key)
+  async update(key: string, props: Partial<Props>): Promise<CollectionItem<Props>> {
+    let newProps = await this.newItem(key).update(props)
+    let item = new CollectionItem(this, newProps, key)
     await this.publish({
       action: 'added',
       item: {
@@ -95,7 +94,7 @@ export default class Collection<Props> extends Path {
   }
 
   async getAll(): Promise<Array<CollectionItem<Props>>> {
-    let keys = await this.redis.lrange(this.keyPath, 0, -1)
+    let keys:Array<string> = await this.redis.lrange(this.keyPath, 0, -1)
     return Promise.all(keys.map(key => this.get(key)))
   }
 

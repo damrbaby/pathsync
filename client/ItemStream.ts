@@ -1,4 +1,3 @@
-// @flow
 import { ReplaySubject } from 'rxjs'
 
 export default class Item {
@@ -7,8 +6,8 @@ export default class Item {
   client: any
   path: string
   stream: any
-  item: ?Object
-  subscription: ?Object
+  item: Object | null
+  subscription: any
 
   constructor(host: string, client: any, path: string) {
     this.host = host
@@ -22,13 +21,13 @@ export default class Item {
   async initSubscription() {
     if (this.subscription) return
 
-    this.subscription = this.client.subscribe(this.path, item => {
+    this.subscription = this.client.subscribe(this.path, (item: Object) => {
       this.setItem(item)
     })
 
     await this.subscription
 
-    let item = await fetch(this.host + '/item' + this.path).then(res => res.json())
+    let item = await fetch(this.host + '/item' + this.path).then((res: any) => res.json())
 
     if (this.item === null) {
       this.setItem(item)

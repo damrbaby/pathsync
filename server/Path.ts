@@ -1,11 +1,9 @@
-// @flow
-
 export default class Path {
 
   path: string
   client: any
   redis: any
-  subs: Set<*>
+  subs: Set<any>
 
   constructor(path: string, client: any, redis: any) {
     this.path = path

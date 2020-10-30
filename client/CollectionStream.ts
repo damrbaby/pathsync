@@ -1,5 +1,13 @@
-// @flow
 import { ReplaySubject } from 'rxjs'
+
+type Payload = {
+  action: 'added' | 'removed'
+  item: {
+    key: string
+    [x: string]: any
+  }
+  key: string
+}
 
 export default class CollectionStream {
 
@@ -8,7 +16,7 @@ export default class CollectionStream {
   path: string
   stream: any
   items: Map<String, Object>
-  subscription: ?Object
+  subscription: any
 
   constructor(host: string, client: any, path: string) {
     this.host = host
@@ -23,19 +31,22 @@ export default class CollectionStream {
     if (this.subscription) return
 
     let loaded = false
-    let queue = []
+    let queue: Array<Function> = []
 
-    this.subscription = this.client.subscribe(this.path, (data) => {
+    this.subscription = this.client.subscribe(this.path, (data: Payload) => {
       let operation
       if (data.action === 'added') {
         operation = () => this.items.set(data.item.key, data.item)
       } else if (data.action === 'removed') {
         operation = () => this.items.delete(data.key)
       }
+
+      if (!operation) {
+        return
+      }
+
       if (loaded) {
-        if (operation) {
-          operation()
-        }
+        operation()
         this.stream.next(this.items)
       } else {
         queue.push(operation)
@@ -44,7 +55,7 @@ export default class CollectionStream {
 
     await this.subscription
 
-    let data = await fetch(this.host + '/collection' + this.path).then(res => res.json())
+    let data = await fetch(this.host + '/collection' + this.path).then((res: any) => res.json())
 
     for (let item of data) {
       this.items.set(item.key, item)
