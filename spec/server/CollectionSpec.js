@@ -21,7 +21,9 @@ describe('Collection', function() {
     let sub = this.sync.subscribe(handler)
     await sub
     expect(await this.sync.getCount()).toEqual(0)
+    expect(await this.sync.has('x123')).toEqual(false)
     await this.sync.add({ foo: 'bar' })
+    expect(await this.sync.has('x123')).toEqual(true)
     expect(await this.sync.getCount()).toEqual(1)
     await this.sync.getAll().then((items) => {
       expect(items.map(item => item.props)).toEqual([{

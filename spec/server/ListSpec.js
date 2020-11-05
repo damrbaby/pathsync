@@ -12,17 +12,23 @@ describe('List', function() {
     let handlerPromise = new Promise((resolve, reject) => {
       handler.and.callFake(resolve)
     })
+    expect (await this.sync.has({ foo: 'bar' })).toEqual(false)
+
     let sub = this.sync.subscribe(handler)
     await sub
     let item = await this.sync.add({
       foo: 'bar'
     })
+
     expect(item.props).toEqual({ foo: 'bar' })
     await this.sync.getAll().then((data) => {
       expect(data.map(item => item.props)).toEqual([
         { foo: 'bar' },
       ])
     })
+
+    expect (await this.sync.has({ foo: 'bar' })).toEqual(true)
+
     await handlerPromise
     expect(handler).toHaveBeenCalledWith({
       action: 'added',
@@ -34,6 +40,9 @@ describe('List', function() {
   it('should remove item', async function() {
     await this.sync.add({ foo: 'bar' })
     await this.sync.add({ hello: 'world' })
+
+    expect (await this.sync.has({ hello: 'world' })).toEqual(true)
+
     await this.sync.getAll().then((data) => {
       expect(data.map(item => item.props)).toEqual([
         { foo: 'bar' },
@@ -53,6 +62,7 @@ describe('List', function() {
         { foo: 'bar' }
       ])
     })
+    expect (await this.sync.has({ hello: 'world' })).toEqual(false)
     expect(handler).toHaveBeenCalledWith({
       action: 'removed',
       item: {

@@ -71,6 +71,17 @@ export default class List<Props> extends Path {
     throw new Error('item not found')
   }
 
+  async has(props: Props): Promise<boolean> {
+    let items = await this.getAll()
+    for (let item of items) {
+      if (stringify(item.props) === stringify(props)) {
+        return true
+      }
+    }
+
+    return false
+  }
+
   async set(items: Array<Props>): Promise<void> {
     await this.redis.rpush(this.path, items.map(item => stringify(item)))
   }

@@ -93,6 +93,11 @@ export default class Collection<Props> extends Path {
     return new CollectionItem(this, value, key)
   }
 
+  async has(key: string) {
+    const keys = await this.redis.lrange(this.keyPath, 0, -1)
+    return keys.indexOf(key) >= 0
+  }
+
   async getAll(): Promise<Array<CollectionItem<Props>>> {
     let keys:Array<string> = await this.redis.lrange(this.keyPath, 0, -1)
     return Promise.all(keys.map(key => this.get(key)))
