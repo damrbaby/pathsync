@@ -1,4 +1,4 @@
-export default class Path {
+export default class Path<Event> {
 
   path: string
   client: any
@@ -12,7 +12,7 @@ export default class Path {
     this.subs = new Set()
   }
 
-  subscribe(handler: Function) {
+  subscribe(handler: (event: Event) => void) {
     let sub = this.client.subscribe(this.path, handler)
     let cancel = sub.cancel.bind(sub)
     sub.cancel = () => {
@@ -23,8 +23,8 @@ export default class Path {
     return sub
   }
 
-  publish(value: any) {
-    return this.client.publish(this.path, value)
+  publish(event: Event) {
+    return this.client.publish(this.path, event)
   }
 
   destroy() {
@@ -32,5 +32,4 @@ export default class Path {
       sub.cancel()
     }
   }
-
 }

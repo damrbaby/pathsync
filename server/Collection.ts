@@ -2,6 +2,16 @@ import { nanoid } from 'nanoid'
 import Item from './Item'
 import Path from './Path'
 
+type Event<Props> = {
+  action: 'added' | 'removed'
+  key?: string
+  item?: {
+    key: string
+    path: string
+    props: Props
+  }
+}
+
 export class CollectionItem<Props> {
 
   sync: Collection<Props>
@@ -29,16 +39,15 @@ export class CollectionItem<Props> {
   }
 
   subscribe(handler: Function) {
-    return this.sync.subscribe((data: { item: { key: string, props: Props }}) => {
-      if (data.item.key === this.key) {
+    return this.sync.subscribe(data => {
+      if (data.item?.key === this.key) {
         handler(data.item.props)
       }
     })
   }
-
 }
 
-export default class Collection<Props> extends Path {
+export default class Collection<Props> extends Path<Event<Props>> {
 
   keyPath: string = ''
 
@@ -106,5 +115,4 @@ export default class Collection<Props> extends Path {
   getCount() {
     return this.redis.llen(this.keyPath)
   }
-
 }

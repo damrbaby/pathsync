@@ -41,20 +41,20 @@ export default class PathSync {
     })
   }
 
-  path(path: string) {
-    return new Path(path, this.client, this.redis)
+  path<Event>(path: string) {
+    return new Path<Event>(path, this.client, this.redis)
   }
 
-  item(path: string): Item<any> {
-    return new Item(path, this.client, this.redis)
+  item<Props>(path: string) {
+    return new Item<Props>(path, this.client, this.redis)
   }
 
-  list(path: string): List<any> {
-    return new List(path, this.client, this.redis)
+  list<Props>(path: string) {
+    return new List<Props>(path, this.client, this.redis)
   }
 
-  collection(path: string): Collection<any> {
-    return new Collection(path, this.client, this.redis)
+  collection<Props>(path: string) {
+    return new Collection<Props>(path, this.client, this.redis)
   }
 
 }

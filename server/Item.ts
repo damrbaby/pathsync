@@ -1,6 +1,6 @@
 import Path from './Path'
 
-export default class Item<Props> extends Path {
+export default class Item<Props> extends Path<Props | {}> {
 
   async get(): Promise<Props> {
     const data = await this.redis.get(this.path)
@@ -27,5 +27,4 @@ export default class Item<Props> extends Path {
       this.publish({})
     ])
   }
-
 }

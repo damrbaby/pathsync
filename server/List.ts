@@ -1,6 +1,12 @@
 import stringify from 'json-stable-stringify'
 import Path from './Path'
 
+type Event<Props> = {
+  action: 'added' | 'removed' | 'changed'
+  item: Props
+  newItem?: Props
+}
+
 export class ListItem<Props> {
 
   sync: List<Props>
@@ -25,12 +31,12 @@ export class ListItem<Props> {
     return this.sync.replace(this, props)
   }
 
-  subscribe(handler: Function) {
+  subscribe(handler: (event: Event<Props>) => void) {
     return this.sync.subscribe(handler)
   }
 }
 
-export default class List<Props> extends Path {
+export default class List<Props> extends Path<Event<Props>> {
 
   async add(item: Props): Promise<ListItem<Props>> {
     await this.redis.rpush(this.path, stringify(item)),
