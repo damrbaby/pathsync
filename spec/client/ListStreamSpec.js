@@ -14,6 +14,7 @@ describe('ListStream', () => {
   it('should add, remove, and change items', async function() {
     let addedHandler = jasmine.createSpy('addedHandler')
     let removedHandler = jasmine.createSpy('removedHandler')
+    let changedHandler = jasmine.createSpy('changedHandler')
     let valueHandler = jasmine.createSpy('valueHandler')
 
     fetchMock.get('http://example.com/list/my/things', [
@@ -25,12 +26,14 @@ describe('ListStream', () => {
     subs.push(this.stream.subscribe('value', valueHandler))
     subs.push(this.stream.subscribe('added', addedHandler))
     subs.push(this.stream.subscribe('removed', removedHandler))
+    subs.push(this.stream.subscribe('changed', changedHandler))
 
     await sleep(10)
 
     expect(addedHandler.calls.count()).toEqual(2)
     expect(valueHandler.calls.count()).toEqual(1)
     expect(removedHandler.calls.count()).toEqual(0)
+    expect(changedHandler.calls.count()).toEqual(0)
 
     expect(addedHandler.calls.allArgs()).toEqual([
       [{ id: '1' }],
@@ -63,18 +66,21 @@ describe('ListStream', () => {
 
     await sleep(10)
 
-    expect(addedHandler.calls.count()).toEqual(2)
-    expect(removedHandler.calls.count()).toEqual(2)
+    expect(addedHandler.calls.count()).toEqual(1)
+    expect(removedHandler.calls.count()).toEqual(1)
+    expect(changedHandler.calls.count()).toEqual(1)
     expect(valueHandler.calls.count()).toEqual(3)
 
     expect(addedHandler.calls.allArgs()).toEqual([
-      [{ id: '3' }],
-      [{ id: '7' }]
+      [{ id: '3' }]
     ])
 
     expect(removedHandler.calls.allArgs()).toEqual([
-      [{ id: '2' }],
-      [{ id: '1' }]
+      [{ id: '2' }]
+    ])
+
+    expect(changedHandler.calls.allArgs()).toEqual([
+      [{ id: '7' }]
     ])
 
     expect(valueHandler.calls.allArgs()).toEqual([

@@ -1,7 +1,7 @@
 import { ReplaySubject } from 'rxjs'
 import { findLastIndex } from 'lodash'
 
-type Events = 'value' | 'added' | 'removed'
+type Events = 'value' | 'added' | 'removed' | 'changed'
 
 type Payload = {
   action: 'added' | 'changed' | 'removed'
@@ -48,8 +48,7 @@ export default class ListStream {
         } else if (data.action === 'changed' && index >= 0) {
           this.items.splice(index, 1, data.newItem)
           if (updateStream) {
-            this.stream.next({ removed: data.item })
-            this.stream.next({ added: data.newItem })
+            this.stream.next({ changed: data.newItem })
           }
         }
         if (updateStream) {
@@ -86,7 +85,7 @@ export default class ListStream {
 
   subscribe(event: Events, handler: Function) {
     this.initSubscription()
-    return this.stream.subscribe((data: { added: Object, removed: Object, value: Object }) => {
+    return this.stream.subscribe((data: { added: Object, removed: Object, value: Object, changed: Object }) => {
       if (data[event]) {
         handler(data[event])
       }
