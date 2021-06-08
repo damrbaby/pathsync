@@ -97,6 +97,10 @@ export default class List<Props> extends Path<Event<Props>> {
     return data.map(d => new ListItem(this, JSON.parse(d)))
   }
 
+  async getAllProps(): Promise<Array<Props>> {
+    return this.getAll().then(items => items.map(item => item.props))
+  }
+
   getCount(): Promise<number> {
     return this.redis.llen(this.path)
   }

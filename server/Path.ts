@@ -1,14 +1,17 @@
-export default class Path<Event> {
+import PathSync from '../server'
 
+export default class Path<Event> {
   path: string
+  sync: PathSync
   client: any
   redis: any
   subs: Set<any>
 
-  constructor(path: string, client: any, redis: any) {
+  constructor(path: string, sync: PathSync) {
     this.path = path
-    this.client = client
-    this.redis = redis
+    this.sync = sync
+    this.client = sync.client
+    this.redis = sync.redis
     this.subs = new Set()
   }
 

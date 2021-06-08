@@ -52,7 +52,7 @@ export default class Collection<Props> extends Path<Event<Props>> {
   keyPath: string = ''
 
   newItem(key: string): Item<Props> {
-    return new Item(this.path + '/' + key, this.client, this.redis)
+    return new Item(this.path + '/' + key, this.sync)
   }
 
   add(props: Props): Promise<CollectionItem<Props>> {
