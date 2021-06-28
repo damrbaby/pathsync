@@ -18,6 +18,9 @@ describe('Item', function() {
     await this.sync.get().then((item) => {
       expect(item).toEqual({ foo: 'bar' })
     })
+    await this.sync.getProp('foo').then((prop) => {
+      expect(prop).toEqual('bar')
+    })
     await handlerPromise
     expect(handler).toHaveBeenCalledWith({ foo: 'bar' })
     sub.cancel()

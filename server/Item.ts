@@ -7,6 +7,10 @@ export default class Item<Props> extends Path<Props | {}> {
     return JSON.parse(data) || {}
   }
 
+  async getProp(prop: keyof Props) {
+    return this.get().then(props => props[prop])
+  }
+
   set(props: Props) {
     return Promise.all([
       this.redis.set(this.path, JSON.stringify(props)),
