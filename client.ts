@@ -1,27 +1,24 @@
+import { FayeClient } from 'faye'
 import ItemStream from './client/ItemStream'
 import ListStream from './client/ListStream'
 import CollectionStream from './client/CollectionStream'
 
 export default class PathStream {
+  client: FayeClient
 
-  host: string
-  client: any
-
-  constructor(host: string, client: any) {
-    this.host = host
+  constructor(client: FayeClient) {
     this.client = client
   }
 
-  item(path: string) {
-    return new ItemStream(this.host, this.client, path)
+  item<Props>(path: string) {
+    return new ItemStream<Props>(this.client, path)
   }
 
-  list(path: string) {
-    return new ListStream(this.host, this.client, path)
+  list<Props>(path: string) {
+    return new ListStream<Props>(this.client, path)
   }
 
-  collection(path: string) {
-    return new CollectionStream(this.host, this.client, path)
+  collection<Props>(path: string) {
+    return new CollectionStream<Props>(this.client, path)
   }
-
 }

@@ -1,25 +1,25 @@
+import { FayeClient, FayeSubscription } from 'faye'
 import { ReplaySubject } from 'rxjs'
+import { nanoid } from 'nanoid'
 
-type Payload = {
+type Item<Props> = {
+  key: string
+} & Props
+
+type Payload<Props> = {
   action: 'added' | 'removed'
-  item: {
-    key: string
-    [x: string]: any
-  }
+  item: Item<Props>
   key: string
 }
 
-export default class CollectionStream {
-
-  host: string
-  client: any
+export default class CollectionStream<Props> {
+  client: FayeClient
   path: string
-  stream: any
-  items: Map<String, Object>
-  subscription: any
+  stream: ReplaySubject<Map<String, Item<Props>>>
+  items: Map<String, Item<Props>>
+  subscription: FayeSubscription | null
 
-  constructor(host: string, client: any, path: string) {
-    this.host = host
+  constructor(client: FayeClient, path: string) {
     this.client = client
     this.path = path
     this.stream = new ReplaySubject(1)
@@ -30,10 +30,10 @@ export default class CollectionStream {
   async initSubscription() {
     if (this.subscription) return
 
-    let loaded = false
+    let loading = true
     let queue: Array<Function> = []
 
-    this.subscription = this.client.subscribe(this.path, (data: Payload) => {
+    this.subscription = this.client.subscribe(this.path, (data: Payload<Props>) => {
       let operation
       if (data.action === 'added') {
         operation = () => this.items.set(data.item.key, data.item)
@@ -45,34 +45,45 @@ export default class CollectionStream {
         return
       }
 
-      if (loaded) {
+      if (loading) {
+        queue.push(operation)
+      } else {
         operation()
         this.stream.next(this.items)
-      } else {
-        queue.push(operation)
       }
     })
 
     await this.subscription
 
-    let data = await fetch(this.host + '/collection' + this.path).then((res: any) => res.json())
+    const channel = this.path + '/' + nanoid()
 
-    for (let item of data) {
-      this.items.set(item.key, item)
-    }
-
-    for (let operation of queue) {
-      if (operation) {
-        operation()
+    const initSub = this.client.subscribe(channel, (items: Item<Props>[]) => {
+      initSub.cancel()
+      for (const item of items) {
+        this.items.set(item.key, item)
       }
-    }
 
-    this.stream.next(this.items)
+      for (let operation of queue) {
+        if (operation) {
+          operation()
+        }
+      }
 
-    loaded = true
+      this.stream.next(this.items)
+
+      loading = false
+    })
+
+    await initSub
+
+    this.client.publish('/subscribe', {
+      type: 'Collection',
+      path: this.path,
+      channel
+    })
   }
 
-  subscribe(handler: Function) {
+  subscribe(handler: (payload: Object) => void) {
     this.initSubscription()
     return this.stream.subscribe(handler)
   }
@@ -83,5 +94,4 @@ export default class CollectionStream {
       this.subscription.cancel()
     }
   }
-
 }

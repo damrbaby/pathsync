@@ -1,49 +1,58 @@
 import { ReplaySubject } from 'rxjs'
+import { nanoid } from 'nanoid'
+import { FayeClient, FayeSubscription } from 'faye'
 
-export default class Item {
-
-  host: string
-  client: any
+export default class Item<Props> {
+  client: FayeClient
   path: string
-  stream: any
-  item: Object | null
-  subscription: any
+  stream: ReplaySubject<Props>
+  subscription: FayeSubscription | null
+  item?: Props
 
-  constructor(host: string, client: any, path: string) {
-    this.host = host
+  constructor(client: FayeClient, path: string) {
     this.client = client
     this.path = path
     this.stream = new ReplaySubject(1)
-    this.item = null
     this.subscription = null
   }
 
   async initSubscription() {
     if (this.subscription) return
 
-    this.subscription = this.client.subscribe(this.path, (item: Object) => {
+    this.subscription = this.client.subscribe(this.path, (item: Props) => {
       this.setItem(item)
     })
 
     await this.subscription
 
-    let item = await fetch(this.host + '/item' + this.path).then((res: any) => res.json())
+    const channel = this.path + '/' + nanoid()
 
-    if (this.item === null) {
-      this.setItem(item)
-    }
+    const initSub = this.client.subscribe(channel, (item: Props) => {
+      initSub.cancel()
+      if (this.item === undefined) {
+        this.setItem(item)
+      }
+    })
+
+    await initSub
+
+    this.client.publish('/subscribe', {
+      type: 'Item',
+      path: this.path,
+      channel
+    })
   }
 
-  subscribe(handler: Function) {
+  subscribe(handler: (item: Props) => void) {
     this.initSubscription()
     return this.stream.subscribe(handler)
   }
 
-  publish(item: Object) {
+  publish(item: Props) {
     return this.client.publish(this.path, item)
   }
 
-  setItem(item: Object) {
+  setItem(item: Props) {
     this.item = item
     this.stream.next(item)
   }
@@ -54,5 +63,4 @@ export default class Item {
       this.subscription.cancel()
     }
   }
-
 }

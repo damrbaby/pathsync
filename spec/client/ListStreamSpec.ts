@@ -1,14 +1,15 @@
-import fetchMock from 'fetch-mock'
-import { pathStream, client, sleep } from '../helpers/helper'
+import { pathStream, pathSync, client, sleep } from '../helpers/helper'
+import ListStream from '../../client/ListStream'
 
 describe('ListStream', () => {
+  let stream: ListStream<{ id: string }>
+
   beforeEach(function() {
-    this.stream = pathStream.list('/my/things')
+    stream = pathStream.list('/my/things')
   })
 
   afterEach(function() {
-    this.stream.destroy()
-    fetchMock.restore()
+    stream.destroy()
   })
 
   it('should add, remove, and change items', async function() {
@@ -17,16 +18,16 @@ describe('ListStream', () => {
     let changedHandler = jasmine.createSpy('changedHandler')
     let valueHandler = jasmine.createSpy('valueHandler')
 
-    fetchMock.get('http://example.com/list/my/things', [
+    await pathSync.list('/my/things').set([
       { id: '1' },
       { id: '2' }
     ])
 
     let subs = []
-    subs.push(this.stream.subscribe('value', valueHandler))
-    subs.push(this.stream.subscribe('added', addedHandler))
-    subs.push(this.stream.subscribe('removed', removedHandler))
-    subs.push(this.stream.subscribe('changed', changedHandler))
+    subs.push(stream.subscribe('value', valueHandler))
+    subs.push(stream.subscribe('added', addedHandler))
+    subs.push(stream.subscribe('removed', removedHandler))
+    subs.push(stream.subscribe('changed', changedHandler))
 
     await sleep(10)
 
@@ -107,20 +108,15 @@ describe('ListStream', () => {
     let removedHandler = jasmine.createSpy('removedHandler')
     let valueHandler = jasmine.createSpy('valueHandler')
 
-    fetchMock.get('http://example.com/list/my/things', async () => {
-      await sleep(50)
-      return [
-        { id: '1' },
-        { id: '2' }
-      ]
-    })
+    await pathSync.list('/my/things').set([
+      { id: '1' },
+      { id: '2' }
+    ])
 
     let subs = []
-    subs.push(this.stream.subscribe('value', valueHandler))
-    subs.push(this.stream.subscribe('added', addedHandler))
-    subs.push(this.stream.subscribe('removed', removedHandler))
-
-    await sleep(10)
+    subs.push(stream.subscribe('value', valueHandler))
+    subs.push(stream.subscribe('added', addedHandler))
+    subs.push(stream.subscribe('removed', removedHandler))
 
     expect(addedHandler.calls.count()).toEqual(0)
     expect(removedHandler.calls.count()).toEqual(0)
@@ -161,7 +157,7 @@ describe('ListStream', () => {
       item: { id: '100' }
     })
 
-    await sleep(100)
+    await sleep(10)
 
     expect(addedHandler.calls.count()).toEqual(2)
     expect(removedHandler.calls.count()).toEqual(0)
@@ -177,9 +173,24 @@ describe('ListStream', () => {
       { id: '3' }
     ])
 
+    valueHandler.calls.reset()
+    removedHandler.calls.reset()
+
+    client.publish('/my/things', {
+      action: 'removed',
+      item: { id: '7' }
+    })
+    await sleep(10)
+
+    expect(removedHandler.calls.allArgs()).toEqual([
+      [{ id: '7' }]
+    ])
+    expect(valueHandler).toHaveBeenCalledWith([
+      { id: '3' }
+    ])
+
     for (let sub of subs) {
       sub.unsubscribe()
     }
   })
-
 })

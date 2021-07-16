@@ -1,52 +1,54 @@
+import { Redis } from 'ioredis'
+import { FayeClient } from 'faye'
 import Path from './server/Path'
 import Item from './server/Item'
 import List from './server/List'
 import Collection from './server/Collection'
 
+export type SubscriptionPayload = {
+  type: 'Item' | 'List' | 'Collection'
+  path: string
+  channel: string
+}
+
 export default class PathSync {
+  client: FayeClient
+  redis: Redis
 
-  client: any
-  redis: any
-
-  constructor(client: any, redis: any) {
+  constructor(client: FayeClient, redis: Redis) {
     this.client = client
     this.redis = redis
   }
 
-  install(app: any) {
-    app.get('/item/:path*', async (ctx:any) => {
-      let sync = new Item('/' + ctx.params.path, this)
-      const item = await sync.get()
-      ctx.body = item
+  async start() {
+    const sub = await this.client.subscribe('/subscribe', async (data: SubscriptionPayload) => {
+      const result = await (async () => {
+        switch (data.type) {
+          case 'Item':
+            return new Item(data.path, this).get()
+          case 'List':
+            return new List(data.path, this).getAllProps()
+          case 'Collection':
+            const items = await new Collection(data.path, this).getAll()
+            return items.map(item => {
+              const { key, path, props } = item
+              return { key, path, props }
+            })
+        }
+      })()
+
+      this.client.publish(data.channel, result)
     })
 
-    app.get('/list/:path*', async (ctx: any) => {
-      let sync = new List('/' + ctx.params.path, this)
-      const items = await sync.getAll()
-      ctx.body = items.map(item => item.props)
-    })
-
-    app.get('/collection/:path*', async (ctx: any) => {
-      let sync = new Collection('/' + ctx.params.path, this)
-      const items = await sync.getAll()
-      let data = []
-      for (let item of items) {
-        data.push({
-          key: item.key,
-          path: item.path,
-          props: item.props
-        })
-      }
-      ctx.body = data
-    })
+    return () => sub.cancel()
   }
 
   path<Event>(path: string) {
     return new Path<Event>(path, this)
   }
 
-  item<Props>(path: string) {
-    return new Item<Props>(path, this)
+  item<Props>(path: string, props: Props | null = null) {
+    return new Item<Props>(path, this, props)
   }
 
   list<Props>(path: string) {
@@ -56,5 +58,4 @@ export default class PathSync {
   collection<Props>(path: string) {
     return new Collection<Props>(path, this)
   }
-
 }

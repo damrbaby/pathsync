@@ -1,11 +1,13 @@
+import { FayeClient, FayeSubscription } from 'faye'
+import { Redis } from 'ioredis'
 import PathSync from '../server'
 
 export default class Path<Event> {
   path: string
   sync: PathSync
-  client: any
-  redis: any
-  subs: Set<any>
+  client: FayeClient
+  redis: Redis
+  subs: Set<FayeSubscription>
 
   constructor(path: string, sync: PathSync) {
     this.path = path

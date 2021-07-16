@@ -57,7 +57,7 @@ export default class List<Props> extends Path<Event<Props>> {
 
   async replace(item: ListItem<Props>, props: Props): Promise<void> {
     let transaction = this.redis.multi()
-    transaction.linsert(this.path, 'after', stringify(item.props), stringify(props))
+    transaction.linsert(this.path, 'AFTER', stringify(item.props), stringify(props))
     transaction.lrem(this.path, -1, stringify(item.props))
     await transaction.exec()
     await this.publish({
@@ -110,5 +110,4 @@ export default class List<Props> extends Path<Event<Props>> {
     let item = JSON.parse(data)
     return item ? new ListItem(this, item) : null
   }
-
 }

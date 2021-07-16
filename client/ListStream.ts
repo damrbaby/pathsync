@@ -1,38 +1,45 @@
 import { ReplaySubject } from 'rxjs'
 import { findLastIndex } from 'lodash'
+import { nanoid } from 'nanoid'
+import { FayeClient, FayeSubscription } from 'faye'
 
 type Events = 'value' | 'added' | 'removed' | 'changed'
 
-type Payload = {
+type Payload<Props> = {
   action: 'added' | 'changed' | 'removed'
-  item: Object
-  newItem: Object
+  item: Props
+  newItem: Props
 }
 
-export default class ListStream {
+type Value<Props> = Partial<{
+ value: Props[]
+ added: Props
+ removed: Props
+ changed: Props
+}>
 
-  host: string
-  client: any
+export default class ListStream<Props> {
+  client: FayeClient
   path: string
-  stream: any
-  items: Array<Object>
-  subscription: any
+  stream: ReplaySubject<Value<Props>>
+  items: Array<Props>
+  subscription: FayeSubscription | null
 
-  constructor(host: string, client: any, path: string) {
-    this.host = host
+  constructor(client: FayeClient, path: string) {
     this.client = client
     this.path = path
     this.stream = new ReplaySubject(1)
     this.items = []
+    this.subscription = null
   }
 
   async initSubscription() {
     if (this.subscription) return
 
-    let loaded = false
+    let loading = true
     let operations:Array<Function> = []
 
-    this.subscription = this.client.subscribe(this.path, (data: Payload) => {
+    this.subscription = this.client.subscribe<Payload<Props>>(this.path, data => {
       let operation = (updateStream: boolean) => {
         let index = findLastIndex(this.items, data.item)
         if (data.action === 'added' && index < 0) {
@@ -56,36 +63,46 @@ export default class ListStream {
         }
       }
 
-      if (loaded) {
-        operation(true)
-      } else {
+      if (loading) {
         operations.push(operation)
+      } else {
+        operation(true)
       }
     })
 
     await this.subscription
 
-    let data = await fetch(this.host + '/list' + this.path).then((res:any) => res.json())
+    const channel = this.path + '/' + nanoid()
 
-    for (let item of data) {
-      this.items.push(item)
-    }
+    const initSub = this.client.subscribe(channel, (items: Props[]) => {
+      initSub.cancel()
+      for (const item of items) {
+        this.items.push(item)
+      }
+      for (let operation of operations) {
+        operation(false)
+      }
 
-    for (let operation of operations) {
-      operation(false)
-    }
+      for (let item of this.items) {
+        this.stream.next({ added: item })
+      }
+      this.stream.next({ value: this.items })
 
-    for (let item of this.items) {
-      this.stream.next({ added: item })
-    }
-    this.stream.next({ value: this.items })
+      loading = false
+    })
 
-    loaded = true
+    await initSub
+
+    this.client.publish('/subscribe', {
+      type: 'List',
+      path: this.path,
+      channel
+    })
   }
 
   subscribe(event: Events, handler: Function) {
     this.initSubscription()
-    return this.stream.subscribe((data: { added: Object, removed: Object, value: Object, changed: Object }) => {
+    return this.stream.subscribe(data => {
       if (data[event]) {
         handler(data[event])
       }
@@ -102,5 +119,4 @@ export default class ListStream {
       this.subscription.cancel()
     }
   }
-
 }

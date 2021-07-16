@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid'
 import Item from './Item'
 import Path from './Path'
 
-type Event<Props> = {
+export type Event<Props> = {
   action: 'added' | 'removed'
   key?: string
   item?: {
@@ -15,27 +15,30 @@ type Event<Props> = {
 export class CollectionItem<Props> {
 
   sync: Collection<Props>
-  props: Props
   key: string
   path: string
+  props: Props | null
 
-  constructor(sync: Collection<Props>, props: Props, key: string) {
+  constructor(sync: Collection<Props>, key: string, props: Props | null) {
     this.sync = sync
-    this.props = props
     this.key = key
     this.path = sync.path + '/' + key
+    this.props = props
   }
 
-  get() {
-    return this.sync.get(this.key)
+  async get() {
+    const item = await this.sync.get(this.key)
+    return this.props = item.props
   }
 
-  remove() {
-    return this.sync.remove(this.key)
+  async remove() {
+    await this.sync.remove(this.key)
+    this.props = null
   }
 
-  update(props: Partial<Props>) {
-    return this.sync.update(this.key, props)
+  async update(props: Partial<Props>) {
+    const item = await this.sync.update(this.key, props)
+    return this.props = item.props
   }
 
   subscribe(handler: Function) {
@@ -47,20 +50,20 @@ export class CollectionItem<Props> {
   }
 }
 
-export default class Collection<Props> extends Path<Event<Props>> {
+export default class Collection<Props> extends Path<Event<Props | null>> {
 
   keyPath: string = ''
 
-  newItem(key: string): Item<Props> {
-    return new Item(this.path + '/' + key, this.sync)
+  newItem(key: string) {
+    return new Item<Props | null>(this.path + '/' + key, this.sync)
   }
 
-  add(props: Props): Promise<CollectionItem<Props>> {
+  add(props: Props) {
     return this.set(nanoid(), props)
   }
 
-  async set(key: string, props: Props): Promise<CollectionItem<Props>> {
-    let item = new CollectionItem(this, props, key)
+  async set(key: string, props: Props) {
+    let item: CollectionItem<Props> = new CollectionItem(this, key, props)
     await this.newItem(key).set(props)
     await this.redis.rpush(this.keyPath, key)
     await this.publish({
@@ -83,9 +86,9 @@ export default class Collection<Props> extends Path<Event<Props>> {
     })
   }
 
-  async update(key: string, props: Partial<Props>): Promise<CollectionItem<Props>> {
+  async update(key: string, props: Partial<Props>) {
     let newProps = await this.newItem(key).update(props)
-    let item = new CollectionItem(this, newProps, key)
+    let item: CollectionItem<Props | null> = new CollectionItem(this, key, newProps)
     await this.publish({
       action: 'added',
       item: {
@@ -97,9 +100,9 @@ export default class Collection<Props> extends Path<Event<Props>> {
     return item
   }
 
-  async get(key: string): Promise<CollectionItem<Props>> {
+  async get(key: string) {
     let value = await this.newItem(key).get()
-    return new CollectionItem(this, value, key)
+    return new CollectionItem<Props>(this, key, value)
   }
 
   async has(key: string) {
@@ -107,9 +110,14 @@ export default class Collection<Props> extends Path<Event<Props>> {
     return keys.indexOf(key) >= 0
   }
 
-  async getAll(): Promise<Array<CollectionItem<Props>>> {
+  async getAll(): Promise<CollectionItem<Props>[]> {
     let keys:Array<string> = await this.redis.lrange(this.keyPath, 0, -1)
     return Promise.all(keys.map(key => this.get(key)))
+  }
+
+  async getAllProps() {
+    const items = await this.getAll()
+    return items.map(item => item.props)
   }
 
   getCount() {
